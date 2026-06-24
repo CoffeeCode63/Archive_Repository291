@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archivo — Repositorio de documentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#21413D;
+    --ink-2:#2E5650;
+    --paper:#E7E4DB;
+    --card:#F5F3ED;
+    --card-2:#EDEAE0;
+    --line:#CDC8BA;
+    --line-soft:#DBD7CB;
+    --brass:#A9802F;
+    --brass-soft:#C9A85E;
+    --muted:#6E7370;
+    --doc:#3C5C8A;
+    --doc-soft:#5C7CA8;
+    --danger:#9B3B2E;
+    --radius:4px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(33,65,61,0.025) 28px, rgba(33,65,61,0.025) 29px);
+  }
+  .mono{font-family:"IBM Plex Mono",monospace;}
+  h1,h2,h3{font-family:"Spectral",serif;font-weight:600;margin:0;line-height:1.15;}
+  button{font-family:inherit;cursor:pointer;}
+  img{max-width:100%;display:block;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 22px;
+    background:var(--ink);
+    color:#F1EFE7;
+    border-bottom:3px solid var(--brass);
+    position:sticky;top:0;z-index:40;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;flex:0 0 auto;}
+  .brand .mark{
+    font-family:"Spectral",serif;font-weight:700;font-size:22px;letter-spacing:0.02em;
+  }
+  .brand .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brass-soft);text-transform:uppercase;letter-spacing:0.16em;}
+  .search-wrap{flex:1 1 auto;display:flex;justify-content:center;}
+  .search{
+    width:100%;max-width:420px;display:flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:var(--radius);padding:7px 12px;
+  }
+  .search input{
+    background:transparent;border:none;outline:none;color:#F1EFE7;
+    font-family:inherit;font-size:14px;width:100%;
+  }
+  .search input::placeholder{color:rgba(241,239,231,0.55);}
+  .search svg{flex:0 0 auto;}
+  .storage{
+    flex:0 0 auto;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    color:rgba(241,239,231,0.6);text-align:right;white-space:nowrap;
+  }
+  .storage b{color:var(--brass-soft);font-weight:500;}
+  .menu-btn{display:none;background:transparent;border:1px solid rgba(255,255,255,0.25);color:#F1EFE7;border-radius:var(--radius);padding:6px 9px;}
+
+  /* ---------- Layout ---------- */
+  .layout{display:flex;align-items:flex-start;}
+  .sidebar{
+    flex:0 0 268px;align-self:stretch;
+    background:var(--card-2);
+    border-right:1px solid var(--line);
+    padding:18px 14px;
+    min-height:calc(100vh - 58px);
+  }
+  .sidebar h3{font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);font-family:"IBM Plex Mono",monospace;font-weight:500;margin-bottom:12px;}
+  .tree{list-style:none;margin:0;padding:0;}
+  .tree ul{list-style:none;margin:0;padding-left:14px;border-left:1px dotted var(--line);}
+  .tnode{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:var(--radius);font-size:13.5px;cursor:pointer;user-select:none;}
+  .tnode:hover{background:rgba(33,65,61,0.06);}
+  .tnode.active{background:rgba(169,128,47,0.16);color:var(--ink);font-weight:500;}
+  .tnode .twist{width:14px;text-align:center;color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:11px;flex:0 0 auto;}
+  .tnode .tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tnode.doc{color:var(--doc);}
+
+  .main{flex:1 1 auto;min-width:0;padding:24px 30px 60px;}
+
+  /* ---------- Breadcrumb ---------- */
+  .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--muted);margin-bottom:18px;}
+  .crumbs button{background:none;border:none;color:var(--ink-2);font-family:inherit;font-size:inherit;padding:2px 3px;border-radius:3px;}
+  .crumbs button:hover{color:var(--brass);text-decoration:underline;}
+  .crumbs .sep{opacity:0.5;}
+  .crumbs .cur{color:var(--brass);}
+
+  /* ---------- Profile header ---------- */
+  .profile{
+    display:flex;gap:22px;align-items:flex-start;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-top:3px solid var(--brass);
+    border-radius:var(--radius);
+    padding:20px;margin-bottom:26px;position:relative;
+  }
+  .profile .pimg{
+    flex:0 0 168px;width:168px;height:128px;border:1px solid var(--line);
+    background:var(--card-2);overflow:hidden;border-radius:3px;position:relative;
+  }
+  .profile .pimg img{width:100%;height:100%;object-fit:cover;}
+  .pimg .noimg{
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:0.12em;
+    background-image:repeating-linear-gradient(45deg,transparent,transparent 9px,rgba(33,65,61,0.06) 9px,rgba(33,65,61,0.06) 10px);
+  }
+  .pmeta{flex:1 1 auto;min-width:0;}
+  .pmeta .kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:var(--brass);margin-bottom:4px;}
+  .pmeta h1{font-size:30px;margin-bottom:8px;word-break:break-word;}
+  .pmeta .pdesc{color:#43504C;max-width:60ch;margin-bottom:14px;white-space:pre-wrap;}
+  .pmeta .pdesc.empty{color:var(--muted);font-style:italic;}
+  .manifest{display:flex;flex-wrap:wrap;gap:18px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2);}
+  .manifest .stat{display:flex;align-items:center;gap:7px;}
+  .manifest .stat b{color:var(--brass);font-weight:500;}
+  .manifest .stat.sub{color:var(--muted);}
+  .pactions{position:absolute;top:16px;right:16px;display:flex;gap:8px;}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px;}
+  .toolbar .spacer{flex:1 1 auto;}
+  .toolbar .count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    border:1px solid var(--ink);background:var(--ink);color:#F1EFE7;
+    padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:500;
+    display:inline-flex;align-items:center;gap:7px;transition:transform .06s ease, background .15s;
+  }
+  .btn:hover{background:var(--ink-2);}
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:transparent;color:var(--ink);}
+  .btn.ghost:hover{background:rgba(33,65,61,0.07);}
+  .btn.brass{background:var(--brass);border-color:var(--brass);color:#fff;}
+  .btn.brass:hover{background:#946d24;}
+  .btn.doc{background:var(--doc);border-color:var(--doc);}
+  .btn.doc:hover{background:#33507a;}
+  .btn.sm{padding:5px 9px;font-size:12px;}
+  .btn.danger{color:var(--danger);background:transparent;border-color:transparent;}
+  .btn.danger:hover{background:rgba(155,59,46,0.1);}
+  .btn.icon{padding:6px 8px;}
+
+  /* ---------- Grid of cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:18px;}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;cursor:pointer;
+    transition:transform .08s ease, box-shadow .15s;position:relative;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(33,65,61,0.12);}
+  .card .tab{
+    height:26px;display:flex;align-items:center;gap:7px;padding:0 12px;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#fff;
+  }
+  .card.folder .tab{background:var(--brass);}
+  .card.doc .tab{background:var(--doc);}
+  .card .thumb{height:118px;background:var(--card-2);overflow:hidden;position:relative;}
+  .card .thumb img{width:100%;height:100%;object-fit:cover;}
+  .card .thumb .noimg{
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    background-image:repeating-linear-gradient(45deg,transparent,transparent 9px,rgba(33,65,61,0.05) 9px,rgba(33,65,61,0.05) 10px);
+  }
+  .card .thumb .ficon{opacity:0.5;}
+  .card .body{padding:12px 14px 14px;flex:1 1 auto;display:flex;flex-direction:column;}
+  .card .cname{font-family:"Spectral",serif;font-size:18px;font-weight:600;margin-bottom:4px;word-break:break-word;}
+  .card .cdesc{font-size:12.5px;color:#566;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px;min-height:18px;}
+  .card .cfoot{margin-top:auto;display:flex;align-items:center;gap:12px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);}
+  .card .cfoot .s{display:flex;align-items:center;gap:5px;}
+  .card .cfoot .s b{color:var(--brass);font-weight:500;}
+  .card.doc .cfoot .chip{color:var(--doc);}
+  .card.doc .cfoot .chip.pdf{color:#B23A2E;font-weight:600;}
+  .card .rowact{position:absolute;top:32px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .12s;}
+  .card:hover .rowact{opacity:1;}
+  .miniact{background:rgba(245,243,237,0.95);border:1px solid var(--line);border-radius:3px;padding:3px 5px;font-size:11px;line-height:1;color:var(--ink-2);}
+  .miniact:hover{color:var(--brass);}
+  .miniact.del:hover{color:var(--danger);}
+
+  /* ---------- Empty state ---------- */
+  .empty-state{
+    border:1px dashed var(--line);border-radius:var(--radius);
+    padding:46px 24px;text-align:center;color:var(--muted);background:rgba(245,243,237,0.5);
+  }
+  .empty-state h3{color:var(--ink);font-size:20px;margin-bottom:6px;}
+  .empty-state p{max-width:42ch;margin:0 auto 16px;font-size:14px;}
+  .empty-state .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+  /* search results */
+  .results h2{font-size:14px;font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:500;margin-bottom:14px;}
+  .rlist{display:flex;flex-direction:column;gap:8px;}
+  .ritem{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;cursor:pointer;}
+  .ritem:hover{border-color:var(--brass);}
+  .ritem .rname{font-weight:500;}
+  .ritem .rpath{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-left:auto;text-align:right;}
+  .pill{font-family:"IBM Plex Mono",monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;padding:2px 7px;border-radius:20px;}
+  .pill.folder{background:rgba(169,128,47,0.15);color:#8a6a25;}
+  .pill.doc{background:rgba(60,92,138,0.14);color:var(--doc);}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(20,30,28,0.55);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:30px 16px;overflow-y:auto;}
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--brass);
+    border-radius:var(--radius);width:100%;max-width:540px;box-shadow:0 20px 50px rgba(0,0,0,0.3);
+    animation:pop .14s ease;
+  }
+  .modal.doc-top{border-top-color:var(--doc);}
+  @keyframes pop{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+  .modal header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line);}
+  .modal header h2{font-size:21px;}
+  .modal .x{background:none;border:none;font-size:22px;color:var(--muted);line-height:1;padding:0 4px;}
+  .modal .x:hover{color:var(--danger);}
+  .modal .body{padding:20px 22px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:6px;}
+  .field input[type=text], .field textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);
+    background:#fff;font-family:inherit;font-size:14px;color:var(--ink);
+  }
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 2px rgba(169,128,47,0.18);}
+  .field textarea{resize:vertical;min-height:74px;}
+  .imgpick{display:flex;gap:14px;align-items:center;}
+  .imgpick .prev{width:100px;height:74px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--card-2);flex:0 0 auto;}
+  .imgpick .prev img{width:100%;height:100%;object-fit:cover;}
+  .imgpick .prev .noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--muted);background-image:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(33,65,61,0.06) 8px,rgba(33,65,61,0.06) 9px);}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px;}
+  .modal footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line);}
+  .filechip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;font-size:13px;}
+  .filechip .fn{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .filechip .fmeta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+  .filechip .rm{background:none;border:none;color:var(--danger);font-size:16px;line-height:1;}
+
+  /* viewer */
+  .viewer{max-width:860px;}
+  .viewer .vstage{background:var(--card-2);border:1px solid var(--line);border-radius:3px;min-height:200px;max-height:62vh;overflow:auto;display:flex;align-items:center;justify-content:center;padding:10px;}
+  .viewer .vstage img{max-height:60vh;object-fit:contain;width:auto;}
+  .viewer .vstage iframe{width:100%;height:60vh;border:none;background:#fff;}
+  .viewer .vstage pre{width:100%;margin:0;white-space:pre-wrap;word-break:break-word;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink);max-height:60vh;overflow:auto;text-align:left;}
+  .viewer .vnote{background:#fff;border:1px solid var(--line);border-radius:3px;padding:14px;margin-bottom:14px;white-space:pre-wrap;}
+  .viewer .vnone{padding:40px;text-align:center;color:var(--muted);}
+
+  /* visually hidden file input */
+  .fileinput{display:none;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:880px){
+    .sidebar{display:none;}
+    .sidebar.open{display:block;position:fixed;top:58px;left:0;bottom:0;z-index:50;width:280px;box-shadow:6px 0 24px rgba(0,0,0,0.2);overflow-y:auto;}
+    .menu-btn{display:inline-flex;}
+    .main{padding:20px 16px 60px;}
+    .profile{flex-direction:column;}
+    .profile .pimg{width:100%;flex-basis:auto;height:150px;}
+    .pactions{position:static;margin-top:14px;}
+    .pmeta h1{font-size:25px;}
+    .storage{display:none;}
+    .brand .tag{display:none;}
+  }
+  @media (max-width:520px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+    .topbar{padding:12px 14px;gap:10px;}
+  }
+  .scrim{display:none;}
+  .scrim.show{display:block;position:fixed;inset:58px 0 0 0;background:rgba(0,0,0,0.3);z-index:45;}
+
+  /* ---------- Supabase: cuenta / auth / toast ---------- */
+  .topright{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
+  .sync{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brass-soft);white-space:nowrap;}
+  .acct-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#F1EFE7;border-radius:var(--radius);padding:7px 12px;font-size:12.5px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .acct-btn:hover{background:rgba(255,255,255,0.16);}
+  .acct-btn.online{border-color:var(--brass);color:var(--brass-soft);}
+  .modal.auth{max-width:420px;}
+  .modal.auth header{border-bottom:1px solid var(--line);}
+  .authmsg{font-size:13px;color:var(--danger);min-height:18px;margin-top:4px;white-space:pre-wrap;line-height:1.4;}
+  .authmsg.ok{color:var(--ink-2);}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#F1EFE7;padding:10px 18px;border-radius:6px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:90;box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .linklike{background:none;border:none;color:var(--doc);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:6px 0 0;}
+  .linklike:hover{color:var(--ink);}
+  .btn.google{width:100%;justify-content:center;gap:10px;background:#fff;color:#3c4043;border:1px solid var(--line);font-weight:600;}
+  .btn.google:hover{background:#f7f6f2;}
+  .authdiv{display:flex;align-items:center;gap:10px;color:#8a8576;font-size:12px;margin:14px 0 4px;}
+  .authdiv::before,.authdiv::after{content:"";flex:1 1 auto;height:1px;background:var(--line);}
+  @media (max-width:880px){ .acct-btn{max-width:120px;} .sync{display:none;} }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="Menú">☰</button>
+    <div class="brand">
+      <span class="mark">Archivo</span>
+      <span class="tag">repositorio</span>
+    </div>
+    <div class="search-wrap">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(241,239,231,0.6)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="searchInput" type="text" placeholder="Buscar carpetas y documentos…" autocomplete="off">
+      </div>
+    </div>
+    <div class="topright">
+      <span class="sync" id="syncBadge"></span>
+      <div class="storage" id="storageBox">almacenamiento<br><b id="storageVal">0 KB</b></div>
+      <button class="acct-btn" id="acctBtn" title="Cuenta / Supabase">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <h3>Árbol</h3>
+      <ul class="tree" id="tree"></ul>
+    </aside>
+    <main class="main" id="main"><!-- rendered --></main>
+  </div>
+
+  <!-- Folder modal -->
+  <div class="overlay" id="folderOverlay">
+    <div class="modal">
+      <header><h2 id="folderModalTitle">Nueva carpeta</h2><button class="x" data-close="folderOverlay">×</button></header>
+      <div class="body">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="fName" placeholder="Ej. Contratos 2026" maxlength="80">
+        </div>
+        <div class="field">
+          <label>Descripción del perfil</label>
+          <textarea id="fDesc" placeholder="¿Qué contiene esta carpeta?"></textarea>
+        </div>
+        <div class="field">
+          <label>Imagen de referencia</label>
+          <div class="imgpick">
+            <div class="prev" id="fImgPrev"><div class="noimg">sin imagen</div></div>
+            <div>
+              <button class="btn ghost sm" id="fImgBtn">Elegir imagen</button>
+              <button class="btn danger sm" id="fImgClear" style="display:none">Quitar</button>
+              <div class="hint">Se reduce automáticamente para ahorrar espacio.</div>
+            </div>
+          </div>
+          <input type="file" class="fileinput" id="fImgInput" accept="image/*">
+        </div>
+      </div>
+      <footer>
+        <button class="btn ghost" data-close="folderOverlay">Cancelar</button>
+        <button class="btn brass" id="fSave">Guardar carpeta</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Document modal -->
+  <div class="overlay" id="docOverlay">
+    <div class="modal doc-top">
+      <header><h2 id="docModalTitle">Nuevo documento</h2><button class="x" data-close="docOverlay">×</button></header>
+      <div class="body">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="dName" placeholder="Ej. Acta de reunión" maxlength="80">
+        </div>
+        <div class="field">
+          <label>Descripción</label>
+          <textarea id="dDesc" placeholder="Una breve nota sobre este documento."></textarea>
+        </div>
+        <div class="field">
+          <label>Archivo adjunto</label>
+          <div id="dFileArea"></div>
+          <input type="file" class="fileinput" id="dFileInput">
+        </div>
+        <div class="field">
+          <label>Nota de texto (opcional)</label>
+          <textarea id="dNote" placeholder="Escribe contenido aquí si no quieres adjuntar un archivo."></textarea>
+        </div>
+      </div>
+      <footer>
+        <button class="btn ghost" data-close="docOverlay">Cancelar</button>
+        <button class="btn doc" id="dSave">Guardar documento</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Viewer modal -->
+  <div class="overlay" id="viewOverlay">
+    <div class="modal viewer">
+      <header><h2 id="viewTitle">Documento</h2><button class="x" data-close="viewOverlay">×</button></header>
+      <div class="body" id="viewBody"></div>
+      <footer>
+        <button class="btn ghost" id="viewEdit">Editar</button>
+        <button class="btn ghost" id="viewOpen" style="display:none">Abrir en pestaña</button>
+        <button class="btn brass" id="viewDownload" style="display:none">Descargar archivo</button>
+        <button class="btn ghost" data-close="viewOverlay">Cerrar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Auth gate -->
+  <div class="overlay gate" id="authOverlay">
+    <div class="modal auth">
+      <header><h2 id="authTitle">Iniciar sesión</h2></header>
+      <div class="body">
+        <p class="hint" id="authIntro">Entra con tu cuenta para ver tu archivo en la nube.</p>
+        <button class="btn google" id="authGoogle" type="button">
+          <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continuar con Google
+        </button>
+        <div class="authdiv"><span>o con tu correo</span></div>
+        <div class="field"><label>Correo</label><input type="text" id="authEmail" autocomplete="email" placeholder="tu@correo.com"></div>
+        <div class="field"><label>Contraseña</label><input type="password" id="authPass" autocomplete="current-password" placeholder="••••••••"></div>
+        <div class="authmsg" id="authMsg"></div>
+        <button class="linklike" id="authEditCfg">Configurar conexión a Supabase</button>
+      </div>
+      <footer>
+        <button class="btn ghost" id="authToggle">Crear cuenta</button>
+        <span style="flex:1 1 auto"></span>
+        <button class="btn ghost" id="authLocal">Modo local</button>
+        <button class="btn brass" id="authSubmit">Entrar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Settings (Supabase) -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal">
+      <header><h2>Supabase</h2><button class="x" data-close="settingsOverlay">×</button></header>
+      <div class="body" id="settingsBody"></div>
+      <footer id="settingsFooter"></footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============ Estado y almacenamiento ============ */
+const STORE_KEY = "archivo_repo_v1";
+let _seq = 0;
+function uid(){ return "n" + Date.now().toString(36) + (_seq++).toString(36); } // contador para evitar IDs duplicados al crear rápido
+
+let state, currentId = "root", searchTerm = "";
+
+/* ============ Supabase (nube) con modo local de reserva ============ */
+/* ───────────────────────────────────────────────────────────────────
+   CONFIGURA AQUÍ TU PROYECTO  (para una app pública de "solo iniciar sesión")
+   Pega tu Project URL y tu anon public key entre las comillas.
+   - Si los rellenas, tus usuarios solo verán "Iniciar sesión".
+   - Si los dejas vacíos, la app pedirá estos datos en pantalla (modo dev).
+   La anon key es PÚBLICA por diseño (la seguridad la dan las políticas RLS),
+   así que es seguro dejarla aquí en una app web.
+   ─────────────────────────────────────────────────────────────────── */
+const BAKED_URL = "";   // ej.  "https://abcdxyz.supabase.co"
+const BAKED_KEY = "";   // ej.  "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+
+const HAS_BAKED = !!(BAKED_URL && BAKED_KEY);
+const CFG = {
+  url: BAKED_URL || localStorage.getItem("archivo_sb_url") || "",
+  key: BAKED_KEY || localStorage.getItem("archivo_sb_key") || ""
+};
+const BUCKET = "archivos";
+const URL_TTL = 60*60*8; // 8 horas para las URLs firmadas
+let sbClient=null, me=null, meEmail=null, authMode="signin";
+function isCloud(){ return !!(sbClient && me); }
+function isConfigured(){ return !!(CFG.url && CFG.key); }
+
+function loadSupabaseLib(){
+  return new Promise((res,rej)=>{
+    if(window.supabase) return res(window.supabase);
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    s.onload=()=>res(window.supabase);
+    s.onerror=()=>rej(new Error("No se pudo cargar la librería de Supabase. Revisa tu conexión a internet."));
+    document.head.appendChild(s);
+  });
+}
+
+let toastTimer=null;
+function toast(msg, ms=1800){
+  const t=document.getElementById("toast"); if(!t) return;
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"), ms);
+}
+function setSync(msg){ const b=document.getElementById("syncBadge"); if(b) b.textContent=msg||""; }
+
+/* --- Storage --- */
+async function sbUpload(path, blob, contentType){
+  const { error } = await sbClient.storage.from(BUCKET).upload(path, blob, { upsert:true, contentType });
+  if(error) throw error;
+  return path;
+}
+async function sbRemove(paths){
+  paths=(paths||[]).filter(Boolean);
+  if(paths.length) await sbClient.storage.from(BUCKET).remove(paths);
+}
+async function sbSignedUrl(path){
+  if(!path) return null;
+  const { data, error } = await sbClient.storage.from(BUCKET).createSignedUrl(path, URL_TTL);
+  return (!error && data) ? data.signedUrl : null;
+}
+async function sbSignedUrls(paths){
+  const uniq=[...new Set((paths||[]).filter(Boolean))];
+  const map={};
+  if(!uniq.length) return map;
+  const { data, error } = await sbClient.storage.from(BUCKET).createSignedUrls(uniq, URL_TTL);
+  if(!error && data) data.forEach(d=>{ if(d.signedUrl) map[d.path]=d.signedUrl; });
+  return map;
+}
+
+/* --- Mapeo fila <-> nodo --- */
+function rowToNode(r){
+  return {
+    id:r.id, parentId:r.parent_id, type:r.type, name:r.name, description:r.description||"",
+    note:r.note||null, image:null, _imagePath:r.image_path||null,
+    file: r.file_path ? { name:r.file_name, type:r.file_type, size:r.file_size, path:r.file_path, url:null } : null,
+    createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now()
+  };
+}
+function nodeToRow(n){
+  return {
+    id:n.id, user_id:me, parent_id:n.parentId, type:n.type, name:n.name, description:n.description||"",
+    image_path:n._imagePath||null, note:n.note||null,
+    file_path:n.file?n.file.path:null, file_name:n.file?n.file.name:null,
+    file_type:n.file?n.file.type:null, file_size:n.file?n.file.size:null
+  };
+}
+
+/* --- Carga inicial --- */
+async function loadAll(){
+  if(isCloud()){
+    setSync("Sincronizando…");
+    const { data, error } = await sbClient.from("nodes").select("*");
+    if(error){ setSync(""); alert("Error al cargar desde Supabase: "+error.message); return; }
+    const nodes={};
+    (data||[]).forEach(r=> nodes[r.id]=rowToNode(r));
+    if(!nodes.root){
+      const root={ id:"root", parentId:null, type:"folder", name:"Mi repositorio",
+        description:"Tu archivo en la nube. Crea carpetas y dale a cada una su propio perfil.", image:null, _imagePath:null, note:null, file:null, createdAt:Date.now() };
+      const ins=await sbClient.from("nodes").insert(nodeToRow(root));
+      if(ins.error){ setSync(""); alert("No se pudo crear el repositorio raíz: "+ins.error.message); return; }
+      nodes.root=root;
+    }
+    state={ nodes };
+    const paths=[];
+    Object.values(nodes).forEach(n=>{ if(n._imagePath)paths.push(n._imagePath); if(n.file&&n.file.path)paths.push(n.file.path); });
+    const urls=await sbSignedUrls(paths);
+    Object.values(nodes).forEach(n=>{
+      if(n._imagePath) n.image=urls[n._imagePath]||null;
+      if(n.file&&n.file.path) n.file.url=urls[n.file.path]||null;
+    });
+    currentId="root"; setSync("");
+  } else {
+    state = load() || seed();
+  }
+  render();
+}
+
+/* --- Conexión y autenticación --- */
+function normalizeSbUrl(u){
+  u=(u||"").trim();
+  const m=u.match(/dashboard\/project\/([a-z0-9]+)/i); // pegaron la URL del panel
+  if(m) return `https://${m[1]}.supabase.co`;
+  u=u.replace(/\/+$/,"");                                // quita barras finales
+  if(u && !/^https?:\/\//i.test(u)) u="https://"+u;      // añade https si falta
+  return u;
+}
+async function initCloud(){
+  CFG.url=normalizeSbUrl(CFG.url);
+  if(CFG.url) localStorage.setItem("archivo_sb_url",CFG.url);
+  try{ await loadSupabaseLib(); }
+  catch(e){ alert(e.message+"\n\nSe usará el modo local por ahora."); state=load()||seed(); render(); updateAccountUI(); return; }
+  try{ sbClient = window.supabase.createClient(CFG.url, CFG.key); }
+  catch(e){ alert("Los datos de Supabase no son válidos: "+(e.message||e)); state=load()||seed(); render(); updateAccountUI(); return; }
+  await checkSession();
+}
+async function checkSession(){
+  const { data } = await sbClient.auth.getSession();
+  if(data && data.session){
+    me=data.session.user.id; meEmail=data.session.user.email;
+    hideOverlay("authOverlay"); updateAccountUI(); await loadAll();
+  } else {
+    me=null; meEmail=null; updateAccountUI(); showAuth();
+  }
+}
+async function connectCloud(url,key){
+  CFG.url=normalizeSbUrl(url); CFG.key=(key||"").trim();
+  localStorage.setItem("archivo_sb_url",CFG.url);
+  localStorage.setItem("archivo_sb_key",CFG.key);
+  await initCloud();
+}
+function disconnectCloud(){
+  localStorage.removeItem("archivo_sb_url");
+  localStorage.removeItem("archivo_sb_key");
+  location.reload();
+}
+async function doAuth(){
+  const email=document.getElementById("authEmail").value.trim();
+  const pass=document.getElementById("authPass").value;
+  const msg=document.getElementById("authMsg"); msg.className="authmsg"; msg.textContent="";
+  if(!sbClient){ msg.textContent="Primero configura tu conexión a Supabase con el enlace de abajo."; return; }
+  if(!email||!pass){ msg.textContent="Escribe tu correo y contraseña."; return; }
+  setSync("…");
+  let res;
+  try{
+    if(authMode==="signup") res=await sbClient.auth.signUp({ email, password:pass });
+    else res=await sbClient.auth.signInWithPassword({ email, password:pass });
+  }catch(e){ setSync(""); msg.textContent="Error de red: "+(e.message||e); return; }
+  setSync("");
+  if(res.error){ msg.textContent=res.error.message; return; }
+  if(authMode==="signup" && res.data && !res.data.session){
+    msg.className="authmsg ok";
+    msg.textContent="Cuenta creada. Revisa tu correo para confirmarla y después inicia sesión.";
+    setAuthMode("signin"); return;
+  }
+  await checkSession();
+}
+async function signInGoogle(){
+  const msg=document.getElementById("authMsg"); msg.className="authmsg"; msg.textContent="";
+  if(!sbClient){ msg.textContent="Primero conecta tu proyecto de Supabase."; return; }
+  if(location.protocol==="file:"){ msg.textContent="Para entrar con Google necesitas abrir la app desde una dirección web (https), no como archivo local en el dispositivo."; return; }
+  try{
+    setSync("…");
+    const redirectTo=location.href.split("#")[0];
+    const { error } = await sbClient.auth.signInWithOAuth({ provider:"google", options:{ redirectTo } });
+    if(error){ setSync(""); msg.textContent=error.message; }
+    // sin error: el navegador se redirige a Google y vuelve a esta URL ya con la sesión
+  }catch(e){ setSync(""); msg.textContent="No se pudo iniciar con Google: "+(e.message||e); }
+}
+async function signOut(){
+  try{ await sbClient.auth.signOut(); }catch(e){}
+  me=null; meEmail=null; state={nodes:{}}; main.innerHTML=""; updateAccountUI(); showAuth();
+}
+
+/* --- UI de cuenta / pantallas --- */
+function showOverlay2(id){ document.getElementById(id).classList.add("show"); }
+function hideOverlay(id){ document.getElementById(id).classList.remove("show"); }
+function showAuth(){ document.getElementById("authOverlay").classList.add("show"); setAuthMode(authMode); document.getElementById("authEmail").focus(); }
+function setAuthMode(m){
+  authMode=m;
+  document.getElementById("authTitle").textContent = m==="signup"?"Crear cuenta":"Iniciar sesión";
+  document.getElementById("authIntro").textContent = m==="signup"?"Crea una cuenta para guardar tu archivo en la nube.":"Entra con tu cuenta para ver tu archivo en la nube.";
+  document.getElementById("authSubmit").textContent = m==="signup"?"Crear cuenta":"Entrar";
+  document.getElementById("authToggle").textContent = m==="signup"?"Ya tengo cuenta":"Crear cuenta";
+}
+function updateAccountUI(){
+  const btn=document.getElementById("acctBtn");
+  if(isCloud()){ btn.textContent="● "+(meEmail||"conectado"); btn.classList.add("online"); }
+  else { btn.textContent="Iniciar sesión"; btn.classList.remove("online"); }
+  const box=document.getElementById("storageBox"); if(box) box.style.display = isCloud()?"none":"";
+}
+function wireCloseButtons(){ document.querySelectorAll("[data-close]").forEach(b=> b.onclick=()=>closeOverlay(b.dataset.close)); }
+function openSettings(){
+  const body=document.getElementById("settingsBody");
+  const footer=document.getElementById("settingsFooter");
+  if(isCloud()){
+    body.innerHTML=`<p class="hint">Estás conectado a Supabase. Tus carpetas y archivos se guardan en tu proyecto.</p>
+      <div class="field"><label>Sesión iniciada</label><div class="filechip"><span class="fn">${escapeHtml(meEmail||"")}</span></div></div>`;
+    footer.innerHTML=`${HAS_BAKED?"":'<button class="btn danger" id="btnDisconnect">Desconectar</button>'}<span style="flex:1 1 auto"></span><button class="btn ghost" id="btnSignout">Cerrar sesión</button><button class="btn brass" data-close="settingsOverlay">Listo</button>`;
+  } else {
+    body.innerHTML=`<p class="hint">Pega los datos de tu proyecto (panel de Supabase → Project Settings → API). Se guardan solo en este navegador.</p>
+      <div class="field"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxxx.supabase.co" value="${escapeHtml(CFG.url)}"></div>
+      <div class="field"><label>Anon public key</label><input type="text" id="sbKey" placeholder="eyJhbGci..." value="${escapeHtml(CFG.key)}"></div>`;
+    footer.innerHTML=`<button class="btn ghost" data-close="settingsOverlay">Cancelar</button><button class="btn brass" id="btnConnect">Conectar</button>`;
+  }
+  wireCloseButtons();
+  const c=document.getElementById("btnConnect"); if(c) c.onclick=()=>{ const u=document.getElementById("sbUrl").value.trim(); const k=document.getElementById("sbKey").value.trim(); if(!u||!k){ alert("Faltan el URL o la clave."); return; } closeOverlay("settingsOverlay"); connectCloud(u,k); };
+  const d=document.getElementById("btnDisconnect"); if(d) d.onclick=()=>{ if(confirm("¿Desconectar Supabase y volver al modo local?\n\nTus datos en la nube NO se borran; podrás volver a conectarte.")) disconnectCloud(); };
+  const so=document.getElementById("btnSignout"); if(so) so.onclick=async()=>{ closeOverlay("settingsOverlay"); await signOut(); };
+  showOverlay2("settingsOverlay");
+}
+
+function boot(){
+  // Wiring de cuenta y auth
+  document.getElementById("acctBtn").onclick=()=>{ if(isCloud()) openSettings(); else showAuth(); };
+  document.getElementById("authSubmit").onclick=doAuth;
+  document.getElementById("authToggle").onclick=()=>setAuthMode(authMode==="signup"?"signin":"signup");
+  document.getElementById("authLocal").onclick=()=>{ hideOverlay("authOverlay"); state=load()||seed(); render(); updateAccountUI(); };
+  document.getElementById("authEditCfg").onclick=openSettings;
+  if(HAS_BAKED) document.getElementById("authEditCfg").style.display="none";
+  document.getElementById("authGoogle").onclick=signInGoogle;
+  document.getElementById("authPass").addEventListener("keydown",e=>{ if(e.key==="Enter") doAuth(); });
+
+  if(isConfigured()){ initCloud(); }
+  else { state=load()||seed(); render(); updateAccountUI(); }
+}
+
+function seed(){
+  const exId = uid();
+  const docId = uid();
+  return {
+    nodes: {
+      root: { id:"root", parentId:null, type:"folder", name:"Mi repositorio",
+              description:"Tu archivo central. Crea carpetas para organizar tus documentos y dale a cada una su propio perfil.", image:null, createdAt:Date.now() },
+      [exId]: { id:exId, parentId:"root", type:"folder", name:"Ejemplo: Proyectos",
+                description:"Carpeta de muestra. Ábrela, edítala o bórrala cuando quieras.", image:null, createdAt:Date.now() },
+      [docId]: { id:docId, parentId:exId, type:"doc", name:"Léeme",
+                 description:"Un documento de texto de ejemplo.", note:"Este es un documento de nota.\n\nPuedes adjuntar archivos (imágenes, PDF, texto…) o escribir notas como esta. Pulsa una tarjeta para verla aquí dentro.", file:null, createdAt:Date.now() }
+    }
+  };
+}
+function load(){
+  try{ const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function save(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    updateStorage();
+    return true;
+  }catch(e){
+    alert("No se pudo guardar: el almacenamiento del navegador está lleno.\n\nEsto suele pasar al adjuntar archivos grandes. Borra algún documento pesado o usa imágenes más pequeñas.");
+    return false;
+  }
+}
+function updateStorage(){
+  const box=document.getElementById("storageBox");
+  if(isCloud()){ if(box) box.style.display="none"; return; }
+  if(box) box.style.display="";
+  let bytes = 0;
+  try{ bytes = new Blob([localStorage.getItem(STORE_KEY)||""]).size; }catch(e){}
+  const el = document.getElementById("storageVal");
+  if(el) el.textContent = bytes < 1024*1024 ? Math.round(bytes/1024)+" KB" : (bytes/1048576).toFixed(2)+" MB";
+}
+
+state = { nodes:{} }; // boot() decide: nube o modo local
+
+/* ============ Helpers de árbol ============ */
+function node(id){ return state.nodes[id]; }
+function childrenOf(id){
+  return Object.values(state.nodes)
+    .filter(n => n.parentId === id)
+    .sort((a,b)=>{
+      if(a.type!==b.type) return a.type==="folder" ? -1 : 1; // carpetas primero
+      return a.name.localeCompare(b.name,"es");
+    });
+}
+function countsOf(id){
+  let folders=0, docs=0;
+  for(const n of Object.values(state.nodes)){
+    if(n.parentId===id){ n.type==="folder" ? folders++ : docs++; }
+  }
+  return {folders, docs};
+}
+function totalDocs(id){
+  let total=0;
+  for(const c of childrenOf(id)){
+    if(c.type==="doc") total++;
+    else total += totalDocs(c.id);
+  }
+  return total;
+}
+function pathOf(id){
+  const path=[]; let cur=node(id);
+  while(cur){ path.unshift(cur); cur = cur.parentId ? node(cur.parentId) : null; }
+  return path;
+}
+function deleteNode(id){
+  for(const c of childrenOf(id)) deleteNode(c.id);
+  delete state.nodes[id];
+}
+
+/* ============ Utilidades de archivo ============ */
+function fmtSize(bytes){
+  if(bytes < 1024) return bytes+" B";
+  if(bytes < 1048576) return (bytes/1024).toFixed(1)+" KB";
+  return (bytes/1048576).toFixed(2)+" MB";
+}
+function readDataURL(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+// Reduce una imagen a máx 900px y la devuelve como dataURL JPEG (ahorra espacio)
+function downscaleImage(file, maxDim=900, quality=0.82){
+  return new Promise(async (res)=>{
+    try{
+      const url = await readDataURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        let {width:w, height:h} = img;
+        if(w>maxDim || h>maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+        const c=document.createElement("canvas"); c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        res(c.toDataURL("image/jpeg",quality));
+      };
+      img.onerror=()=>res(url);
+      img.src=url;
+    }catch(e){ res(null); }
+  });
+}
+
+/* ============ Render ============ */
+const main = document.getElementById("main");
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function iconFolder(c){ return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${c||'#fff'}" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`; }
+function iconDoc(c){ return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${c||'#fff'}" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>`; }
+
+function render(){
+  renderTree();
+  if(searchTerm.trim()){ renderSearch(); }
+  else { renderFolder(); }
+  updateStorage();
+}
+
+function renderTree(){
+  const tree = document.getElementById("tree");
+  tree.innerHTML="";
+  tree.appendChild(treeNode("root"));
+}
+function treeNode(id){
+  const n=node(id);
+  const li=document.createElement("li");
+  const kids=childrenOf(id);
+  const folderKids=kids.filter(k=>k.type==="folder");
+  const row=document.createElement("div");
+  row.className="tnode"+(id===currentId?" active":"")+(n.type==="doc"?" doc":"");
+  const twist = n.type==="folder" ? (folderKids.length||kids.some(k=>k.type==="doc") ? "▸" : "·") : "·";
+  row.innerHTML = `<span class="twist">${n.type==="folder"?twist:""}</span>${n.type==="folder"?iconFolder('#A9802F'):iconDoc('#3C5C8A')}<span class="tname">${escapeHtml(n.name)}</span>`;
+  row.onclick=(e)=>{ e.stopPropagation(); if(n.type==="folder"){ openFolder(id); } else { openViewer(id); } closeSidebarMobile(); };
+  li.appendChild(row);
+  if(folderKids.length){
+    const ul=document.createElement("ul");
+    folderKids.forEach(k=> ul.appendChild(treeNode(k.id)));
+    li.appendChild(ul);
+  }
+  return li;
+}
+
+function renderFolder(){
+  const n=node(currentId);
+  const c=countsOf(currentId);
+  const kids=childrenOf(currentId);
+  const isRoot = currentId==="root";
+
+  // breadcrumb
+  const path=pathOf(currentId);
+  let crumbs=`<div class="crumbs">`;
+  path.forEach((p,i)=>{
+    if(i>0) crumbs+=`<span class="sep">/</span>`;
+    if(i===path.length-1) crumbs+=`<span class="cur">${escapeHtml(p.name)}</span>`;
+    else crumbs+=`<button data-go="${p.id}">${escapeHtml(p.name)}</button>`;
+  });
+  crumbs+=`</div>`;
+
+  // profile
+  const imgHtml = n.image ? `<img src="${n.image}" alt="">` : `<div class="noimg">sin imagen</div>`;
+  const desc = n.description ? `<p class="pdesc">${escapeHtml(n.description)}</p>`
+                             : `<p class="pdesc empty">Sin descripción. Edita esta carpeta para añadir un perfil.</p>`;
+  const nested = totalDocs(currentId);
+  const profile = `
+    <section class="profile">
+      <div class="pimg">${imgHtml}</div>
+      <div class="pmeta">
+        <div class="kicker">${isRoot ? "Repositorio" : "Perfil de carpeta"}</div>
+        <h1>${escapeHtml(n.name)}</h1>
+        ${desc}
+        <div class="manifest">
+          <span class="stat">${iconFolder('#A9802F')} <b>${c.folders}</b> subcarpeta${c.folders===1?"":"s"}</span>
+          <span class="stat">${iconDoc('#A9802F')} <b>${c.docs}</b> documento${c.docs===1?"":"s"} directos</span>
+          ${nested!==c.docs?`<span class="stat sub">▣ ${nested} en total (con subniveles)</span>`:""}
+        </div>
+      </div>
+      <div class="pactions">
+        <button class="btn ghost sm" id="editCurrent">Editar perfil</button>
+        ${!isRoot?`<button class="btn danger sm" id="delCurrent">Eliminar</button>`:""}
+      </div>
+    </section>`;
+
+  // toolbar
+  const toolbar = `
+    <div class="toolbar">
+      <button class="btn brass" id="newFolder">＋ Nueva carpeta</button>
+      <button class="btn doc" id="newDoc">＋ Nuevo documento</button>
+      <span class="spacer"></span>
+      <span class="count">${kids.length} elemento${kids.length===1?"":"s"}</span>
+    </div>`;
+
+  // grid or empty
+  let content;
+  if(!kids.length){
+    content = `
+      <div class="empty-state">
+        <h3>Esta carpeta está vacía</h3>
+        <p>Crea una subcarpeta para seguir organizando, o añade un documento con su descripción y archivo.</p>
+        <div class="acts">
+          <button class="btn brass" id="emptyFolder">＋ Nueva carpeta</button>
+          <button class="btn doc" id="emptyDoc">＋ Nuevo documento</button>
+        </div>
+      </div>`;
+  } else {
+    content = `<div class="grid">${kids.map(cardHtml).join("")}</div>`;
+  }
+
+  main.innerHTML = crumbs + profile + toolbar + content;
+
+  // wire breadcrumb
+  main.querySelectorAll("[data-go]").forEach(b=> b.onclick=()=>openFolder(b.dataset.go));
+  document.getElementById("editCurrent").onclick=()=>openFolderModal(currentId);
+  const delC=document.getElementById("delCurrent"); if(delC) delC.onclick=()=>confirmDelete(currentId);
+  const nf=document.getElementById("newFolder"); if(nf) nf.onclick=()=>openFolderModal(null);
+  const nd=document.getElementById("newDoc"); if(nd) nd.onclick=()=>openDocModal(null);
+  const ef=document.getElementById("emptyFolder"); if(ef) ef.onclick=()=>openFolderModal(null);
+  const ed=document.getElementById("emptyDoc"); if(ed) ed.onclick=()=>openDocModal(null);
+
+  // wire cards
+  main.querySelectorAll(".card").forEach(card=>{
+    const id=card.dataset.id;
+    card.onclick=(e)=>{
+      if(e.target.closest(".rowact")) return;
+      const t=node(id);
+      if(t.type==="folder") openFolder(id); else openViewer(id);
+    };
+  });
+  main.querySelectorAll(".miniact.edit").forEach(b=> b.onclick=(e)=>{e.stopPropagation(); const t=node(b.dataset.id); t.type==="folder"?openFolderModal(b.dataset.id):openDocModal(b.dataset.id);});
+  main.querySelectorAll(".miniact.del").forEach(b=> b.onclick=(e)=>{e.stopPropagation(); confirmDelete(b.dataset.id);});
+}
+
+function cardHtml(n){
+  if(n.type==="folder"){
+    const c=countsOf(n.id);
+    const thumb = n.image ? `<img src="${n.image}" alt="">`
+      : `<div class="noimg">${iconFolder('rgba(33,65,61,0.35)').replace('width="13" height="13"','width="34" height="34"')}</div>`;
+    return `
+      <article class="card folder" data-id="${n.id}">
+        <div class="tab">${iconFolder()} carpeta</div>
+        <div class="thumb">${thumb}</div>
+        <div class="rowact">
+          <button class="miniact edit" data-id="${n.id}" title="Editar">✎</button>
+          <button class="miniact del" data-id="${n.id}" title="Eliminar">🗑</button>
+        </div>
+        <div class="body">
+          <div class="cname">${escapeHtml(n.name)}</div>
+          <div class="cdesc">${escapeHtml(n.description||"")}</div>
+          <div class="cfoot">
+            <span class="s">${iconFolder('#A9802F')}<b>${c.folders}</b></span>
+            <span class="s">${iconDoc('#A9802F')}<b>${c.docs}</b></span>
+          </div>
+        </div>
+      </article>`;
+  } else {
+    const hasFile=!!n.file;
+    const isImg = hasFile && n.file.type.startsWith("image/");
+    const thumb = isImg ? `<img src="${n.file.url||n.file.data}" alt="">`
+      : `<div class="noimg">${iconDoc('rgba(60,92,138,0.4)').replace('width="13" height="13"','width="34" height="34"')}</div>`;
+    const ext = hasFile ? (n.file.name.split(".").pop()||"").toUpperCase() : "NOTA";
+    const sz = hasFile ? fmtSize(n.file.size) : "texto";
+    const isPdf = hasFile && n.file.type==="application/pdf";
+    return `
+      <article class="card doc" data-id="${n.id}">
+        <div class="tab">${iconDoc()} documento</div>
+        <div class="thumb">${thumb}</div>
+        <div class="rowact">
+          <button class="miniact edit" data-id="${n.id}" title="Editar">✎</button>
+          <button class="miniact del" data-id="${n.id}" title="Eliminar">🗑</button>
+        </div>
+        <div class="body">
+          <div class="cname">${escapeHtml(n.name)}</div>
+          <div class="cdesc">${escapeHtml(n.description||"")}</div>
+          <div class="cfoot">
+            <span class="chip${isPdf?" pdf":""}">${escapeHtml(ext)}</span>
+            <span>${sz}</span>
+          </div>
+        </div>
+      </article>`;
+  }
+}
+
+function renderSearch(){
+  const term=searchTerm.trim().toLowerCase();
+  const matches=Object.values(state.nodes).filter(n=>
+    n.id!=="root" && (n.name.toLowerCase().includes(term) || (n.description||"").toLowerCase().includes(term))
+  ).sort((a,b)=> a.name.localeCompare(b.name,"es"));
+
+  let html=`<div class="crumbs"><span class="cur">Resultados de búsqueda</span></div>`;
+  html+=`<section class="results"><h2>${matches.length} resultado${matches.length===1?"":"s"} para “${escapeHtml(searchTerm.trim())}”</h2>`;
+  if(!matches.length){
+    html+=`<div class="empty-state"><h3>Sin coincidencias</h3><p>Prueba con otro término o revisa el árbol de carpetas.</p></div>`;
+  } else {
+    html+=`<div class="rlist">`;
+    for(const m of matches){
+      const parents=pathOf(m.id).slice(0,-1).map(p=>p.name).join(" / ") || "—";
+      html+=`<div class="ritem" data-id="${m.id}" data-type="${m.type}">
+        <span class="pill ${m.type}">${m.type==="folder"?"carpeta":"doc"}</span>
+        <span class="rname">${escapeHtml(m.name)}</span>
+        <span class="rpath">${escapeHtml(parents)}</span>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</section>`;
+  main.innerHTML=html;
+  main.querySelectorAll(".ritem").forEach(it=>{
+    it.onclick=()=>{
+      document.getElementById("searchInput").value="";
+      searchTerm="";
+      const t=node(it.dataset.id);
+      if(t.type==="folder") openFolder(t.id); else openViewer(t.id);
+    };
+  });
+}
+
+/* ============ Navegación ============ */
+function openFolder(id){ currentId=id; searchTerm=""; document.getElementById("searchInput").value=""; render(); window.scrollTo({top:0}); }
+
+/* ============ Modales: carpeta ============ */
+let folderEditId=null, folderImgData=null, folderImgDirty=false;
+function openFolderModal(id){
+  folderEditId=id;
+  folderImgDirty=false;
+  const title=document.getElementById("folderModalTitle");
+  if(id){
+    const n=node(id);
+    title.textContent = id==="root" ? "Editar repositorio" : "Editar carpeta";
+    document.getElementById("fName").value=n.name;
+    document.getElementById("fDesc").value=n.description||"";
+    folderImgData=n.image||null;
+  } else {
+    title.textContent="Nueva carpeta";
+    document.getElementById("fName").value="";
+    document.getElementById("fDesc").value="";
+    folderImgData=null;
+  }
+  renderFolderImgPreview();
+  showOverlay("folderOverlay");
+  document.getElementById("fName").focus();
+}
+function renderFolderImgPreview(){
+  const prev=document.getElementById("fImgPrev");
+  const clear=document.getElementById("fImgClear");
+  if(folderImgData){ prev.innerHTML=`<img src="${folderImgData}" alt="">`; clear.style.display=""; }
+  else { prev.innerHTML=`<div class="noimg">sin imagen</div>`; clear.style.display="none"; }
+}
+document.getElementById("fImgBtn").onclick=()=>document.getElementById("fImgInput").click();
+document.getElementById("fImgClear").onclick=()=>{ folderImgData=null; folderImgDirty=true; renderFolderImgPreview(); };
+async function setFolderImageFromFile(f){
+  if(!f) return;
+  if(!f.type.startsWith("image/")){ alert("El perfil de la carpeta admite solo imágenes (JPG, PNG, WEBP…)."); return; }
+  folderImgData=await downscaleImage(f);
+  folderImgDirty=true;
+  renderFolderImgPreview();
+}
+document.getElementById("fImgInput").onchange=async(e)=>{ await setFolderImageFromFile(e.target.files[0]); e.target.value=""; };
+// Arrastrar y soltar una imagen, o tocar la miniatura, para subirla desde el dispositivo
+(function(){
+  const box=document.getElementById("fImgPrev");
+  box.style.cursor="pointer";
+  box.title="Toca o arrastra una imagen aquí";
+  box.addEventListener("click",()=>document.getElementById("fImgInput").click());
+  ["dragenter","dragover"].forEach(ev=> box.addEventListener(ev,e=>{ e.preventDefault(); box.style.outline="2px dashed var(--brass)"; }));
+  ["dragleave","drop"].forEach(ev=> box.addEventListener(ev,e=>{ e.preventDefault(); box.style.outline=""; }));
+  box.addEventListener("drop",async e=>{ await setFolderImageFromFile(e.dataTransfer.files[0]); });
+})();
+document.getElementById("fSave").onclick=async()=>{
+  const name=document.getElementById("fName").value.trim();
+  if(!name){ alert("Ponle un nombre a la carpeta."); return; }
+  const desc=document.getElementById("fDesc").value.trim();
+  let n, isNew=false;
+  if(folderEditId){ n=node(folderEditId); }
+  else { isNew=true; n={ id:uid(), parentId:currentId, type:"folder", name:"", description:"", image:null, _imagePath:null, note:null, file:null, createdAt:Date.now() }; }
+  n.name=name; n.description=desc;
+
+  if(isCloud()){
+    try{
+      setSync("Guardando…");
+      if(folderImgDirty){
+        if(folderImgData){
+          const path=`${me}/img/${n.id}.jpg`;
+          await sbUpload(path, dataURLtoBlob(folderImgData), "image/jpeg");
+          n._imagePath=path; n.image=await sbSignedUrl(path);
+        } else {
+          if(n._imagePath) await sbRemove([n._imagePath]);
+          n._imagePath=null; n.image=null;
+        }
+      }
+      if(isNew) state.nodes[n.id]=n;
+      const { error } = await sbClient.from("nodes").upsert(nodeToRow(n), { onConflict:"user_id,id" });
+      if(error) throw error;
+      setSync(""); toast("Guardado");
+    }catch(err){ setSync(""); alert("No se pudo guardar en la nube: "+(err.message||err)); return; }
+  } else {
+    n.image=folderImgData;
+    if(isNew) state.nodes[n.id]=n;
+    if(!save()) return;
+  }
+  closeOverlay("folderOverlay"); render();
+};
+
+/* ============ Modales: documento ============ */
+let docEditId=null, docFileData=null, docFileDirty=false, docFileObj=null;
+function openDocModal(id){
+  docEditId=id;
+  docFileDirty=false; docFileObj=null;
+  const title=document.getElementById("docModalTitle");
+  if(id){
+    const n=node(id);
+    title.textContent="Editar documento";
+    document.getElementById("dName").value=n.name;
+    document.getElementById("dDesc").value=n.description||"";
+    document.getElementById("dNote").value=n.note||"";
+    docFileData=n.file||null;
+  } else {
+    title.textContent="Nuevo documento";
+    document.getElementById("dName").value="";
+    document.getElementById("dDesc").value="";
+    document.getElementById("dNote").value="";
+    docFileData=null;
+  }
+  renderDocFileArea();
+  showOverlay("docOverlay");
+  document.getElementById("dName").focus();
+}
+function renderDocFileArea(){
+  const area=document.getElementById("dFileArea");
+  if(docFileData){
+    area.innerHTML=`<div class="filechip"><span class="fn">${escapeHtml(docFileData.name)}</span><span class="fmeta">${escapeHtml((docFileData.type||"archivo"))} · ${fmtSize(docFileData.size)}</span><button class="rm" id="dFileRm" title="Quitar">×</button></div>`;
+    document.getElementById("dFileRm").onclick=()=>{ docFileData=null; docFileObj=null; docFileDirty=true; renderDocFileArea(); };
+  } else {
+    area.innerHTML=`<button class="btn ghost sm" id="dFileBtn">Adjuntar archivo</button> <span class="hint">Imágenes, PDF o texto se ven aquí dentro. Máx. recomendado 2 MB.</span>`;
+    document.getElementById("dFileBtn").onclick=()=>document.getElementById("dFileInput").click();
+  }
+}
+document.getElementById("dFileInput").onchange=async(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(isCloud()){
+    if(f.size > 50*1024*1024 && !confirm("El archivo pesa "+fmtSize(f.size)+". ¿Subirlo igualmente a la nube?")){ e.target.value=""; return; }
+    docFileObj=f; docFileDirty=true;
+    docFileData={ name:f.name, type:f.type||"application/octet-stream", size:f.size }; // solo metadatos para la ficha
+  } else {
+    if(f.size > 4*1024*1024 && !confirm("El archivo pesa "+fmtSize(f.size)+". Los archivos grandes pueden llenar el almacenamiento del navegador. ¿Adjuntarlo igualmente?")){ e.target.value=""; return; }
+    let data;
+    if(f.type.startsWith("image/")) data=await downscaleImage(f, 1400, 0.85);
+    else data=await readDataURL(f);
+    docFileData={ name:f.name, type:f.type||"application/octet-stream", size:f.size, data };
+    docFileObj=null; docFileDirty=true;
+  }
+  renderDocFileArea();
+  e.target.value="";
+};
+document.getElementById("dSave").onclick=async()=>{
+  const name=document.getElementById("dName").value.trim();
+  if(!name){ alert("Ponle un nombre al documento."); return; }
+  const desc=document.getElementById("dDesc").value.trim();
+  const note=document.getElementById("dNote").value.trim();
+  let n, isNew=false;
+  if(docEditId){ n=node(docEditId); }
+  else { isNew=true; n={ id:uid(), parentId:currentId, type:"doc", name:"", description:"", note:"", image:null, _imagePath:null, file:null, createdAt:Date.now() }; }
+  n.name=name; n.description=desc; n.note=note;
+
+  if(isCloud()){
+    try{
+      setSync("Guardando…");
+      if(docFileDirty){
+        if(n.file && n.file.path) await sbRemove([n.file.path]);
+        if(docFileObj){
+          const safe=(docFileObj.name||"archivo").replace(/[^\w.\-]+/g,"_");
+          const path=`${me}/doc/${n.id}/${safe}`;
+          let up=docFileObj, size=docFileObj.size;
+          if(docFileObj.type.startsWith("image/")){ up=dataURLtoBlob(await downscaleImage(docFileObj,1600,0.85)); size=up.size; }
+          await sbUpload(path, up, docFileObj.type||"application/octet-stream");
+          n.file={ name:docFileObj.name, type:docFileObj.type||"application/octet-stream", size, path, url:await sbSignedUrl(path) };
+        } else {
+          n.file=null;
+        }
+      }
+      if(isNew) state.nodes[n.id]=n;
+      const { error } = await sbClient.from("nodes").upsert(nodeToRow(n), { onConflict:"user_id,id" });
+      if(error) throw error;
+      setSync(""); toast("Guardado");
+    }catch(err){ setSync(""); alert("No se pudo guardar en la nube: "+(err.message||err)); return; }
+  } else {
+    n.file=docFileData;
+    if(isNew) state.nodes[n.id]=n;
+    if(!save()) return;
+  }
+  closeOverlay("docOverlay"); render();
+};
+
+/* ============ Visor de documentos ============ */
+let viewerId=null, viewerObjectURL=null;
+function revokeViewerURL(){ if(viewerObjectURL){ URL.revokeObjectURL(viewerObjectURL); viewerObjectURL=null; } }
+// Convierte un data URL (base64) a Blob. Los navegadores renderizan PDFs desde blob:, pero bloquean data: dentro de un iframe.
+function dataURLtoBlob(dataURL){
+  const parts=dataURL.split(",");
+  const mime=(parts[0].match(/data:([^;]+)/)||[null,"application/octet-stream"])[1];
+  const bin=atob(parts[1]);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+async function openViewer(id){
+  revokeViewerURL();
+  viewerId=id;
+  const n=node(id);
+  document.getElementById("viewTitle").textContent=n.name;
+  const body=document.getElementById("viewBody");
+  const dl=document.getElementById("viewDownload");
+  const op=document.getElementById("viewOpen");
+  dl.style.display="none"; op.style.display="none";
+
+  let html="";
+  if(n.description) html+=`<p style="color:#566;margin:0 0 14px;">${escapeHtml(n.description)}</p>`;
+  if(n.note) html+=`<div class="vnote">${escapeHtml(n.note)}</div>`;
+
+  if(n.file){
+    const f=n.file;
+    const remote = f.url || null;
+    let blobURL=null;
+    if(!remote && f.data){ try{ blobURL=URL.createObjectURL(dataURLtoBlob(f.data)); viewerObjectURL=blobURL; }catch(e){ blobURL=f.data; } }
+    const src = remote || blobURL || f.data;
+
+    if(f.type.startsWith("image/")){
+      html+=`<div class="vstage"><img src="${src}" alt="${escapeHtml(f.name)}"></div>`;
+    } else if(f.type==="application/pdf"){
+      html+=`<div class="vstage"><iframe src="${src}" title="${escapeHtml(f.name)}"></iframe></div>
+             <p class="hint" style="margin-top:8px">¿No se ve el PDF en este recuadro? Usa “Abrir en pestaña” o “Descargar archivo”.</p>`;
+      op.style.display="";
+      op.onclick=()=>window.open(src,"_blank");
+    } else if(f.type.startsWith("text/") || /\.(txt|md|csv|json|js|css|html|xml)$/i.test(f.name)){
+      html+=`<div class="vstage"><pre id="vText">Cargando…</pre></div>`;
+    } else {
+      html+=`<div class="vstage"><div class="vnone">No hay vista previa para este tipo de archivo (${escapeHtml(f.type||"desconocido")}).<br>Usa “Descargar archivo” para abrirlo.</div></div>`;
+    }
+    dl.style.display="";
+    dl.onclick=async()=>{
+      try{
+        let href=src;
+        if(remote){ const r=await fetch(remote); const b=await r.blob(); href=URL.createObjectURL(b); }
+        const a=document.createElement("a"); a.href=href; a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+        if(remote) setTimeout(()=>URL.revokeObjectURL(href), 5000);
+      }catch(e){ window.open(src,"_blank"); }
+    };
+  } else if(!n.note){
+    html+=`<div class="vstage"><div class="vnone">Este documento no tiene archivo ni nota.</div></div>`;
+  }
+
+  body.innerHTML=html;
+
+  // cargar texto si aplica
+  if(n.file && (n.file.type.startsWith("text/") || /\.(txt|md|csv|json|js|css|html|xml)$/i.test(n.file.name))){
+    try{ const res=await fetch(n.file.url||n.file.data); const txt=await res.text(); const pre=document.getElementById("vText"); if(pre) pre.textContent=txt; }
+    catch(e){ const pre=document.getElementById("vText"); if(pre) pre.textContent="No se pudo leer el texto."; }
+  }
+
+  document.getElementById("viewEdit").onclick=()=>{ closeOverlay("viewOverlay"); openDocModal(id); };
+  showOverlay("viewOverlay");
+}
+
+/* ============ Eliminar ============ */
+async function confirmDelete(id){
+  const n=node(id);
+  const c=countsOf(id);
+  let msg;
+  if(n.type==="folder"){
+    const extra=(c.folders||c.docs)?`\n\nContiene ${c.folders} subcarpeta(s) y ${c.docs} documento(s) directo(s); todo se eliminará.`:"";
+    msg=`¿Eliminar la carpeta “${n.name}”?${extra}`;
+  } else {
+    msg=`¿Eliminar el documento “${n.name}”?`;
+  }
+  if(!confirm(msg)) return;
+  const goTo = n.parentId || "root";
+  if(isCloud()){
+    const ids=[], paths=[];
+    (function collect(x){
+      const nx=state.nodes[x]; if(!nx) return;
+      ids.push(x);
+      if(nx._imagePath) paths.push(nx._imagePath);
+      if(nx.file && nx.file.path) paths.push(nx.file.path);
+      childrenOf(x).forEach(ch=>collect(ch.id));
+    })(id);
+    try{
+      setSync("Eliminando…");
+      await sbRemove(paths);
+      const { error } = await sbClient.from("nodes").delete().in("id", ids);
+      if(error) throw error;
+      ids.forEach(i=> delete state.nodes[i]);
+      setSync(""); toast("Eliminado");
+    }catch(err){ setSync(""); alert("No se pudo eliminar en la nube: "+(err.message||err)); return; }
+  } else {
+    deleteNode(id); save();
+  }
+  if(currentId===id || !node(currentId)) currentId=goTo;
+  render();
+}
+
+/* ============ Overlays ============ */
+function showOverlay(id){ document.getElementById(id).classList.add("show"); }
+function closeOverlay(id){ document.getElementById(id).classList.remove("show"); if(id==="viewOverlay") revokeViewerURL(); }
+document.querySelectorAll("[data-close]").forEach(b=> b.onclick=()=>closeOverlay(b.dataset.close));
+document.querySelectorAll(".overlay").forEach(ov=> ov.addEventListener("click",e=>{ if(e.target===ov && !ov.classList.contains("gate")) closeOverlay(ov.id); }));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.querySelectorAll(".overlay.show").forEach(o=>{ if(!o.classList.contains("gate")) closeOverlay(o.id); }); });
+
+/* ============ Búsqueda ============ */
+let searchTimer=null;
+document.getElementById("searchInput").addEventListener("input",e=>{
+  searchTerm=e.target.value;
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(render,120);
+});
+
+/* ============ Sidebar móvil ============ */
+function closeSidebarMobile(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("scrim").classList.remove("show"); }
+document.getElementById("menuBtn").onclick=()=>{
+  const sb=document.getElementById("sidebar"); const sc=document.getElementById("scrim");
+  sb.classList.toggle("open"); sc.classList.toggle("show", sb.classList.contains("open"));
+};
+document.getElementById("scrim").onclick=closeSidebarMobile;
+
+/* ============ Init ============ */
+boot();
+</script>
+</body>
+</html>
