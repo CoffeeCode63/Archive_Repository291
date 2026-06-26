@@ -376,6 +376,18 @@
           <textarea id="dDesc" placeholder="Una breve nota sobre este documento."></textarea>
         </div>
         <div class="field">
+          <label>Imagen de perfil (opcional)</label>
+          <div class="imgpick">
+            <div class="prev" id="dImgPrev"><div class="noimg">sin imagen</div></div>
+            <div>
+              <button class="btn ghost sm" id="dImgBtn">Elegir imagen</button>
+              <button class="btn danger sm" id="dImgClear" style="display:none">Quitar</button>
+              <div class="hint">Portada del documento (p. ej. un auto para un PDF de autos). Se reduce sola.</div>
+            </div>
+          </div>
+          <input type="file" class="fileinput" id="dImgInput" accept="image/*">
+        </div>
+        <div class="field">
           <label>Archivo adjunto</label>
           <div id="dFileArea"></div>
           <input type="file" class="fileinput" id="dFileInput">
@@ -952,7 +964,8 @@ function cardHtml(n){
   } else {
     const hasFile=!!n.file;
     const isImg = hasFile && n.file.type.startsWith("image/");
-    const thumb = isImg ? `<img src="${n.file.url||n.file.data}" alt="">`
+    const thumb = n.image ? `<img src="${n.image}" alt="">`
+      : isImg ? `<img src="${n.file.url||n.file.data}" alt="">`
       : `<div class="noimg">${iconDoc('rgba(60,92,138,0.4)').replace('width="13" height="13"','width="34" height="34"')}</div>`;
     const ext = hasFile ? (n.file.name.split(".").pop()||"").toUpperCase() : "NOTA";
     const sz = hasFile ? fmtSize(n.file.size) : "texto";
@@ -1098,10 +1111,10 @@ document.getElementById("fSave").onclick=async()=>{
 };
 
 /* ============ Modales: documento ============ */
-let docEditId=null, docFileData=null, docFileDirty=false, docFileObj=null;
+let docEditId=null, docFileData=null, docFileDirty=false, docFileObj=null, docImgData=null, docImgDirty=false;
 function openDocModal(id){
   docEditId=id;
-  docFileDirty=false; docFileObj=null;
+  docFileDirty=false; docFileObj=null; docImgDirty=false;
   const title=document.getElementById("docModalTitle");
   if(id){
     const n=node(id);
@@ -1109,15 +1122,16 @@ function openDocModal(id){
     document.getElementById("dName").value=n.name;
     document.getElementById("dDesc").value=n.description||"";
     document.getElementById("dNote").value=n.note||"";
-    docFileData=n.file||null;
+    docFileData=n.file||null; docImgData=n.image||null;
   } else {
     title.textContent="Nuevo documento";
     document.getElementById("dName").value="";
     document.getElementById("dDesc").value="";
     document.getElementById("dNote").value="";
-    docFileData=null;
+    docFileData=null; docImgData=null;
   }
   renderDocFileArea();
+  renderDocImgPreview();
   showOverlay("docOverlay");
   document.getElementById("dName").focus();
 }
@@ -1148,6 +1162,31 @@ document.getElementById("dFileInput").onchange=async(e)=>{
   renderDocFileArea();
   e.target.value="";
 };
+function renderDocImgPreview(){
+  const prev=document.getElementById("dImgPrev");
+  const clear=document.getElementById("dImgClear");
+  if(docImgData){ prev.innerHTML=`<img src="${docImgData}" alt="">`; clear.style.display=""; }
+  else { prev.innerHTML=`<div class="noimg">sin imagen</div>`; clear.style.display="none"; }
+}
+async function setDocImageFromFile(f){
+  if(!f) return;
+  if(!f.type.startsWith("image/")){ alert("La imagen de perfil admite solo imágenes (JPG, PNG, WEBP…)."); return; }
+  docImgData=await downscaleImage(f);
+  docImgDirty=true;
+  renderDocImgPreview();
+}
+document.getElementById("dImgBtn").onclick=()=>document.getElementById("dImgInput").click();
+document.getElementById("dImgClear").onclick=()=>{ docImgData=null; docImgDirty=true; renderDocImgPreview(); };
+document.getElementById("dImgInput").onchange=async(e)=>{ await setDocImageFromFile(e.target.files[0]); e.target.value=""; };
+(function(){
+  const box=document.getElementById("dImgPrev");
+  box.style.cursor="pointer";
+  box.title="Toca o arrastra una imagen aquí";
+  box.addEventListener("click",()=>document.getElementById("dImgInput").click());
+  ["dragenter","dragover"].forEach(ev=> box.addEventListener(ev,e=>{ e.preventDefault(); box.style.outline="2px dashed var(--brass)"; }));
+  ["dragleave","drop"].forEach(ev=> box.addEventListener(ev,e=>{ e.preventDefault(); box.style.outline=""; }));
+  box.addEventListener("drop",async e=>{ await setDocImageFromFile(e.dataTransfer.files[0]); });
+})();
 document.getElementById("dSave").onclick=async()=>{
   const name=document.getElementById("dName").value.trim();
   if(!name){ alert("Ponle un nombre al documento."); return; }
@@ -1174,13 +1213,23 @@ document.getElementById("dSave").onclick=async()=>{
           n.file=null;
         }
       }
+      if(docImgDirty){
+        if(docImgData){
+          const ipath=`${me}/img/${n.id}.jpg`;
+          await sbUpload(ipath, dataURLtoBlob(docImgData), "image/jpeg");
+          n._imagePath=ipath; n.image=await sbSignedUrl(ipath);
+        } else {
+          if(n._imagePath) await sbRemove([n._imagePath]);
+          n._imagePath=null; n.image=null;
+        }
+      }
       if(isNew) state.nodes[n.id]=n;
       const { error } = await sbClient.from("nodes").upsert(nodeToRow(n), { onConflict:"user_id,id" });
       if(error) throw error;
       setSync(""); toast("Guardado");
     }catch(err){ setSync(""); alert("No se pudo guardar en la nube: "+(err.message||err)); return; }
   } else {
-    n.file=docFileData;
+    n.file=docFileData; n.image=docImgData;
     if(isNew) state.nodes[n.id]=n;
     if(!save()) return;
   }
